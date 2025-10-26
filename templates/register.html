@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-4">
+    <h3>Criar conta</h3>
+    <form method="post">
+      <div class="mb-2"><label>Usuário</label><input name="username" class="form-control"></div>
+      <div class="mb-2"><label>Senha</label><input name="password" type="password" class="form-control"></div>
+      <div class="d-grid"><button class="btn btn-success">Criar conta</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

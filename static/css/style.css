@@ -1,1 +1,7 @@
-body { background:#f8f9fa; } .navbar-brand { font-weight:700; } #map { border-radius:8px; }
+:root{ --brand:#007bff; --bg:#f5f6fa; }
+body{background:var(--bg);}
+.sidebar{background:white; height:100%; border-left:1px solid #e6e9ef; box-shadow: -4px 0 8px rgba(0,0,0,0.03);}
+#preview img{max-width:100%; border-radius:6px;}
+.leaflet-container{border-radius:6px; margin:8px;}
+.btn-primary{background:var(--brand); border-color:var(--brand);}
+.container-fluid{padding-left:0;padding-right:0;}

@@ -1,168 +1,88 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="row">
-  <div class="col-md-9">
-    <div id="map" style="height:80vh;"></div>
-    <div class="position-absolute top-0 end-0 m-3">
-      <button id="locateBtn" class="btn btn-sm btn-outline-primary">📍 Minha localização</button>
-    </div>
+<div class="row" style="height: calc(100vh - 80px);">
+  <div class="col-md-9 p-0">
+    <div id="map" style="height:100%;"></div>
   </div>
-  <div class="col-md-3">
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">Registrar Buraco</h5>
-        <p class="card-text">Clique no botão abaixo e depois no mapa para registrar.</p>
-        <button id="startRegister" class="btn btn-danger w-100 mb-2">🕳️ Registrar</button>
-        <hr>
-        <h6>Filtros</h6>
-        <div class="mb-2">
-          <select id="statusFilter" class="form-select">
-            <option value="">Todos</option>
-            <option value="Registrada">Registrada</option>
-            <option value="Em análise">Em análise</option>
-            <option value="Concluída">Concluída</option>
-          </select>
-        </div>
-        <div class="mb-2">
-          <input id="searchBox" class="form-control" placeholder="Buscar por título ou descrição">
-        </div>
-        <hr>
-        <h6>Registros recentes</h6>
-        <div id="list" style="max-height:50vh; overflow:auto;"></div>
+  <div class="col-md-3 p-3 sidebar">
+    <h5>Registrar Buraco</h5>
+    <form id="regForm" method="post" action="{{ url_for('submit') }}" enctype="multipart/form-data">
+      <div class="mb-2">
+        <label class="form-label">Título</label>
+        <input name="title" class="form-control">
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal formulario -->
-<div class="modal fade" id="formModal" tabindex="-1">
-  <div class="modal-dialog">
-    <form id="reportForm" class="modal-content" enctype="multipart/form-data">
-      <div class="modal-header">
-        <h5 class="modal-title">Novo Registro</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      <div class="mb-2">
+        <label class="form-label">Descrição</label>
+        <textarea name="description" class="form-control" rows="3"></textarea>
       </div>
-      <div class="modal-body">
-        <div class="mb-2">
-          <label class="form-label">Título</label>
-          <input name="title" class="form-control" placeholder="Ex: Cratera próxima ao semáforo">
-        </div>
-        <div class="mb-2">
-          <label class="form-label">Descrição</label>
-          <textarea name="description" class="form-control" rows="3"></textarea>
-        </div>
-        <div class="mb-2">
-          <label class="form-label">Foto (opcional)</label>
-          <input type="file" name="image" accept="image/*" class="form-control">
-        </div>
-        <input type="hidden" name="lat" id="formLat">
-        <input type="hidden" name="lng" id="formLng">
+      <div class="mb-2">
+        <label class="form-label">Imagem (≤2MB)</label>
+        <input id="imageField" name="image" type="file" accept="image/*" class="form-control">
+        <div id="preview" class="mt-2"></div>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Enviar</button>
+      <div class="mb-2">
+        <label class="form-label">Latitude</label>
+        <input id="lat" name="lat" class="form-control">
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Longitude</label>
+        <input id="lng" name="lng" class="form-control">
+      </div>
+      <div class="d-grid">
+        <button class="btn btn-primary">Registrar</button>
       </div>
     </form>
+    <hr>
+    <h6>Registros</h6>
+    <div id="listRecords" style="max-height:35vh; overflow:auto;"></div>
+    {% if user and user['is_admin'] == 1 %}
+      <div class="mt-3"><a href="{{ url_for('admin_panel') }}" class="btn btn-danger w-100">Painel Admin</a></div>
+    {% endif %}
   </div>
 </div>
 
-{% endblock %}
-
-{% block scripts %}
 <script>
-  let map = L.map('map').setView([-23.55, -46.63], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+const map = L.map('map').setView([-23.5505, -46.6333], 12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'© OpenStreetMap'
+}).addTo(map);
+let markers = L.layerGroup().addTo(map);
 
-  const markers = L.layerGroup().addTo(map);
+map.on('click', function(e){
+  document.getElementById('lat').value = e.latlng.lat.toFixed(6);
+  document.getElementById('lng').value = e.latlng.lng.toFixed(6);
+});
 
-  async function loadMarkers(){
-    markers.clearLayers();
-    const res = await fetch('/api/list');
-    const data = await res.json();
-    data.forEach(item => {
-      const m = L.marker([item.lat,item.lng]).addTo(markers);
-      let html = `<b>${item.title}</b><br>${item.description}<br><small>${new Date(item.created_at).toLocaleString()}</small>`;
-      if(item.image){
-        html += `<br><img src="/uploads/${item.image}" style="max-width:200px;margin-top:6px;border-radius:8px;">`;
-      }
-      m.bindPopup(html);
-    });
-    renderList(data);
-  }
-
-  function renderList(data){
-    const list = document.getElementById('list');
-    list.innerHTML='';
-    data.forEach(d => {
-      const el = document.createElement('div');
-      el.className='mb-2 p-2 border rounded';
-      el.innerHTML = `<b>${d.title}</b><br><small>${d.description}</small>`;
-      list.appendChild(el);
-    });
-  }
-
-  loadMarkers();
-
-  let registering=false;
-  const startBtn = document.getElementById('startRegister');
-  const formModal = new bootstrap.Modal(document.getElementById('formModal'));
-
-  startBtn.addEventListener('click', ()=>{
-    registering = true;
-    alert('Clique no mapa para selecionar o ponto. Um formulário será aberto.');
+async function loadHoles(){
+  markers.clearLayers();
+  const res = await fetch('{{ url_for('api_holes') }}');
+  const data = await res.json();
+  const list = document.getElementById('listRecords'); list.innerHTML='';
+  data.forEach(h=>{
+    const m = L.marker([h.lat,h.lng]).addTo(markers);
+    let html = `<b>${h.title}</b><br>${h.description}<br><small>${new Date(h.created_at).toLocaleString()}</small>`;
+    if(h.image){ html += `<br><img src='{{ url_for('uploads','') }}${h.image}' style='max-width:200px;margin-top:6px;border-radius:6px;'>`; }
+    html += `<br><form method='post' action='{{ url_for('conclude', id=0) }}'.replace('0', h.id) ><button class='btn btn-sm btn-success mt-2'>Concluir</button></form>`;
+    m.bindPopup(html);
+    const el = document.createElement('div'); el.className='p-2 border rounded mb-2';
+    el.innerHTML = `<b>${h.title}</b><br><small>${h.description}</small>`;
+    el.addEventListener('click', ()=>{ map.setView([h.lat,h.lng],16); m.openPopup(); });
+    list.appendChild(el);
   });
+}
 
-  map.on('click', function(e){
-    if(!registering) return;
-    document.getElementById('formLat').value = e.latlng.lat;
-    document.getElementById('formLng').value = e.latlng.lng;
-    formModal.show();
-    registering=false;
-  });
+document.getElementById('imageField').addEventListener('change', function(ev){
+  const file = ev.target.files[0];
+  const preview = document.getElementById('preview');
+  preview.innerHTML='';
+  if(!file) return;
+  if(!file.type.startsWith('image/')) { preview.innerHTML='<div class="text-danger">Arquivo não é imagem.</div>'; ev.target.value=''; return; }
+  if(file.size > 2*1024*1024) { preview.innerHTML='<div class="text-danger">Imagem excede 2MB.</div>'; ev.target.value=''; return; }
+  const reader = new FileReader();
+  reader.onload = function(e){ const img = document.createElement('img'); img.src = e.target.result; img.style.maxWidth='100%'; preview.appendChild(img); };
+  reader.readAsDataURL(file);
+});
 
-  document.getElementById('reportForm').addEventListener('submit', async function(ev){
-    ev.preventDefault();
-    const form = ev.target;
-    const fd = new FormData(form);
-    const res = await fetch('/api/register', {method:'POST', body:fd});
-    if(res.ok){
-      formModal.hide();
-      form.reset();
-      await loadMarkers();
-      alert('Registro enviado com sucesso!');
-    } else {
-      const err = await res.json();
-      alert('Erro: ' + (err.error || 'Falha ao enviar'));
-    }
-  });
-
-  document.getElementById('locateBtn').addEventListener('click', ()=>{
-    map.locate({setView:true, maxZoom:16});
-  });
-
-  document.getElementById('statusFilter').addEventListener('change', async function(){
-    const res = await fetch('/api/list');
-    const data = await res.json();
-    const filtered = data.filter(d => this.value ? d.status===this.value : true);
-    markers.clearLayers();
-    filtered.forEach(item => {
-      const m = L.marker([item.lat,item.lng]).addTo(markers);
-      m.bindPopup(`<b>${item.title}</b><br>${item.description}`);
-    });
-    renderList(filtered);
-  });
-
-  document.getElementById('searchBox').addEventListener('input', async function(){
-    const q = this.value.toLowerCase();
-    const res = await fetch('/api/list');
-    const data = await res.json();
-    const filtered = data.filter(d => (d.title + ' ' + d.description).toLowerCase().includes(q));
-    markers.clearLayers();
-    filtered.forEach(item => {
-      L.marker([item.lat,item.lng]).addTo(markers);
-    });
-    renderList(filtered);
-  });
-
+loadHoles();
 </script>
 {% endblock %}
