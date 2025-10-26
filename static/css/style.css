@@ -1,7 +1,7 @@
-:root{ --brand:#007bff; --bg:#f5f6fa; }
-body{background:var(--bg);}
-.sidebar{background:white; height:100%; border-left:1px solid #e6e9ef; box-shadow: -4px 0 8px rgba(0,0,0,0.03);}
-#preview img{max-width:100%; border-radius:6px;}
-.leaflet-container{border-radius:6px; margin:8px;}
-.btn-primary{background:var(--brand); border-color:var(--brand);}
-.container-fluid{padding-left:0;padding-right:0;}
+:root{--brand:#1676ff;--bg:#f5f7fb;--text:#2b2f3a;}
+body{background:var(--bg);color:var(--text);} .leaflet-container{border-radius:8px;}
+.sidebar{transition:transform .25s ease;} .sidebar.collapsed{transform:translateX(100%);}
+.fab{position:fixed;right:18px;bottom:24px;z-index:1200;border-radius:24px;padding:12px 16px;box-shadow:0 6px 20px rgba(0,0,0,.15);}
+.record-card{background:#fff;border:1px solid #e8ecf3;border-radius:8px;padding:.5rem .75rem;margin-bottom:.5rem;cursor:pointer;}
+.record-card:hover{background:#f3f7ff;}
+.filters .form-check-input:checked{background-color:var(--brand);border-color:var(--brand);}

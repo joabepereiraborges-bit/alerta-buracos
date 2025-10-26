@@ -1,1 +1,1 @@
-// js placeholder
+// JS global do site
