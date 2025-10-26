@@ -1,7 +1,1 @@
-:root{--brand:#1676ff;--bg:#f5f7fb;--text:#2b2f3a;}
-body{background:var(--bg);color:var(--text);} .leaflet-container{border-radius:8px;}
-.sidebar{transition:transform .25s ease;} .sidebar.collapsed{transform:translateX(100%);}
-.fab{position:fixed;right:18px;bottom:24px;z-index:1200;border-radius:24px;padding:12px 16px;box-shadow:0 6px 20px rgba(0,0,0,.15);}
-.record-card{background:#fff;border:1px solid #e8ecf3;border-radius:8px;padding:.5rem .75rem;margin-bottom:.5rem;cursor:pointer;}
-.record-card:hover{background:#f3f7ff;}
-.filters .form-check-input:checked{background-color:var(--brand);border-color:var(--brand);}
+body{font-family:sans-serif;}
