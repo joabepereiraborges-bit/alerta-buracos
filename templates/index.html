@@ -1,61 +1,168 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <title>Alerta Buracos</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
-    <style>
-        #map { height: 90vh; width: 100%; }
-        button {
-            margin: 10px;
-            padding: 8px 16px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        button:hover { background-color: #0056b3; }
-    </style>
-</head>
-<body>
-    <button id="registrar">Registrar Buraco</button>
-    <div id="map"></div>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script>
-        const map = L.map('map').setView([-12.9777, -38.5016], 13);
+{% extends 'base.html' %}
+{% block content %}
+<div class="row">
+  <div class="col-md-9">
+    <div id="map" style="height:80vh;"></div>
+    <div class="position-absolute top-0 end-0 m-3">
+      <button id="locateBtn" class="btn btn-sm btn-outline-primary">📍 Minha localização</button>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Registrar Buraco</h5>
+        <p class="card-text">Clique no botão abaixo e depois no mapa para registrar.</p>
+        <button id="startRegister" class="btn btn-danger w-100 mb-2">🕳️ Registrar</button>
+        <hr>
+        <h6>Filtros</h6>
+        <div class="mb-2">
+          <select id="statusFilter" class="form-select">
+            <option value="">Todos</option>
+            <option value="Registrada">Registrada</option>
+            <option value="Em análise">Em análise</option>
+            <option value="Concluída">Concluída</option>
+          </select>
+        </div>
+        <div class="mb-2">
+          <input id="searchBox" class="form-control" placeholder="Buscar por título ou descrição">
+        </div>
+        <hr>
+        <h6>Registros recentes</h6>
+        <div id="list" style="max-height:50vh; overflow:auto;"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
+<!-- Modal formulario -->
+<div class="modal fade" id="formModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="reportForm" class="modal-content" enctype="multipart/form-data">
+      <div class="modal-header">
+        <h5 class="modal-title">Novo Registro</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-2">
+          <label class="form-label">Título</label>
+          <input name="title" class="form-control" placeholder="Ex: Cratera próxima ao semáforo">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Descrição</label>
+          <textarea name="description" class="form-control" rows="3"></textarea>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Foto (opcional)</label>
+          <input type="file" name="image" accept="image/*" class="form-control">
+        </div>
+        <input type="hidden" name="lat" id="formLat">
+        <input type="hidden" name="lng" id="formLng">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Enviar</button>
+      </div>
+    </form>
+  </div>
+</div>
 
-        fetch("/buracos")
-            .then(r => r.json())
-            .then(buracos => {
-                buracos.forEach(b => {
-                    L.marker([b.lat, b.lng]).addTo(map).bindPopup("Buraco registrado");
-                });
-            });
+{% endblock %}
 
-        document.getElementById("registrar").addEventListener("click", () => {
-            map.once('click', e => {
-                const novoBuraco = { lat: e.latlng.lat, lng: e.latlng.lng };
+{% block scripts %}
+<script>
+  let map = L.map('map').setView([-23.55, -46.63], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
 
-                fetch("/registrar", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(novoBuraco)
-                })
-                .then(r => r.json())
-                .then(res => {
-                    alert(res.status);
-                    L.marker([novoBuraco.lat, novoBuraco.lng]).addTo(map)
-                        .bindPopup("Buraco registrado").openPopup();
-                });
-            });
+  const markers = L.layerGroup().addTo(map);
 
-            alert("Clique no mapa para marcar o buraco");
-        });
-    </script>
-</body>
-</html>
+  async function loadMarkers(){
+    markers.clearLayers();
+    const res = await fetch('/api/list');
+    const data = await res.json();
+    data.forEach(item => {
+      const m = L.marker([item.lat,item.lng]).addTo(markers);
+      let html = `<b>${item.title}</b><br>${item.description}<br><small>${new Date(item.created_at).toLocaleString()}</small>`;
+      if(item.image){
+        html += `<br><img src="/uploads/${item.image}" style="max-width:200px;margin-top:6px;border-radius:8px;">`;
+      }
+      m.bindPopup(html);
+    });
+    renderList(data);
+  }
+
+  function renderList(data){
+    const list = document.getElementById('list');
+    list.innerHTML='';
+    data.forEach(d => {
+      const el = document.createElement('div');
+      el.className='mb-2 p-2 border rounded';
+      el.innerHTML = `<b>${d.title}</b><br><small>${d.description}</small>`;
+      list.appendChild(el);
+    });
+  }
+
+  loadMarkers();
+
+  let registering=false;
+  const startBtn = document.getElementById('startRegister');
+  const formModal = new bootstrap.Modal(document.getElementById('formModal'));
+
+  startBtn.addEventListener('click', ()=>{
+    registering = true;
+    alert('Clique no mapa para selecionar o ponto. Um formulário será aberto.');
+  });
+
+  map.on('click', function(e){
+    if(!registering) return;
+    document.getElementById('formLat').value = e.latlng.lat;
+    document.getElementById('formLng').value = e.latlng.lng;
+    formModal.show();
+    registering=false;
+  });
+
+  document.getElementById('reportForm').addEventListener('submit', async function(ev){
+    ev.preventDefault();
+    const form = ev.target;
+    const fd = new FormData(form);
+    const res = await fetch('/api/register', {method:'POST', body:fd});
+    if(res.ok){
+      formModal.hide();
+      form.reset();
+      await loadMarkers();
+      alert('Registro enviado com sucesso!');
+    } else {
+      const err = await res.json();
+      alert('Erro: ' + (err.error || 'Falha ao enviar'));
+    }
+  });
+
+  document.getElementById('locateBtn').addEventListener('click', ()=>{
+    map.locate({setView:true, maxZoom:16});
+  });
+
+  document.getElementById('statusFilter').addEventListener('change', async function(){
+    const res = await fetch('/api/list');
+    const data = await res.json();
+    const filtered = data.filter(d => this.value ? d.status===this.value : true);
+    markers.clearLayers();
+    filtered.forEach(item => {
+      const m = L.marker([item.lat,item.lng]).addTo(markers);
+      m.bindPopup(`<b>${item.title}</b><br>${item.description}`);
+    });
+    renderList(filtered);
+  });
+
+  document.getElementById('searchBox').addEventListener('input', async function(){
+    const q = this.value.toLowerCase();
+    const res = await fetch('/api/list');
+    const data = await res.json();
+    const filtered = data.filter(d => (d.title + ' ' + d.description).toLowerCase().includes(q));
+    markers.clearLayers();
+    filtered.forEach(item => {
+      L.marker([item.lat,item.lng]).addTo(markers);
+    });
+    renderList(filtered);
+  });
+
+</script>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <h5>Admin - Registros</h5>
+    <table class="table">
+      <thead><tr><th>ID</th><th>Título</th><th>Imagem</th><th>Coords</th><th>Data</th><th>Ações</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td>{{ r[0] }}</td>
+          <td>{{ r[1] }}</td>
+          <td>
+            {% if r[5] %}<img src="/uploads/{{ r[5] }}" style="max-width:100px;">{% endif %}
+          </td>
+          <td>{{ r[3] }}, {{ r[4] }}</td>
+          <td>{{ r[7] }}</td>
+          <td>
+            <form method="post" action="/admin/delete/{{ r[0] }}" onsubmit="return confirm('Excluir?');">
+              <button class="btn btn-sm btn-danger">Excluir</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
