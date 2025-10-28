@@ -1,1 +1,65 @@
-<h1>Mapa Alerta Buracos</h1>
+
+{% extends 'base.html' %}
+{% block content %}
+<div class="row g-0 position-relative" style="height: calc(100vh - 140px);">
+  <div class="col-12 col-lg-9 p-0 h-100">
+    <div id="map" class="h-100 w-100"></div>
+  </div>
+
+  <div class="col-12 col-lg-3 h-100 border-start bg-white p-3 sidebar collapsed" id="sidebar">
+    <h5 class="mb-3 text-primary">Registrar Buraco</h5>
+    <form id="regForm" method="post" action="{{ url_for('submit') }}" enctype="multipart/form-data">
+      <div class="mb-2">
+        <label class="form-label">Título</label>
+        <input name="title" class="form-control" placeholder="Ex: Cratera na Av. X">
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Descrição</label>
+        <textarea name="description" class="form-control" rows="3"></textarea>
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Imagem (até 2MB)</label>
+        <input id="imageField" name="image" type="file" accept="image/*" class="form-control">
+        <div id="preview" class="mt-2"></div>
+      </div>
+      <div class="row">
+        <div class="col-6 mb-2">
+          <label class="form-label">Latitude</label>
+          <input id="lat" name="lat" class="form-control">
+        </div>
+        <div class="col-6 mb-2">
+          <label class="form-label">Longitude</label>
+          <input id="lng" name="lng" class="form-control">
+        </div>
+      </div>
+      <div class="d-grid gap-2">
+        <button class="btn btn-primary">Registrar</button>
+      </div>
+    </form>
+  </div>
+
+  <button class="btn btn-primary fab" id="togglePanel">➕ Novo buraco</button>
+</div>
+
+<script>
+const map = L.map('map').setView([-23.5505, -46.6333], 12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap'
+}).addTo(map);
+
+map.on('click', e => {
+  document.getElementById('lat').value = e.latlng.lat.toFixed(6);
+  document.getElementById('lng').value = e.latlng.lng.toFixed(6);
+});
+
+const sidebar = document.getElementById('sidebar');
+document.getElementById('togglePanel').addEventListener('click', () => {
+  sidebar.classList.toggle('collapsed');
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('open') === 'map') sidebar.classList.remove('collapsed');
+});
+</script>
+{% endblock %}
