@@ -1,12 +1,8 @@
-:root{
-  --azul: #2196F3;
-  --azul-escuro: #1565C0;
-  --azul-claro: #E3F2FD;
-}
-.bg-app{ background: var(--azul-claro); }
 #map { height: 100%; min-height: 70vh; }
 .sidebar{ transition: transform .25s ease-in-out; background:#fff; }
 .sidebar.collapsed{ transform: translateX(100%); }
-.fab{ position:absolute; right:16px; bottom:16px; border-radius:999px; box-shadow:0 8px 24px rgba(0,0,0,.15); }
-.btn-primary{ background: var(--azul); border-color: var(--azul); }
-.btn-primary:hover{ background: var(--azul-escuro); border-color: var(--azul-escuro); }
+.fab{
+  position:absolute; right:16px; bottom:16px;
+  border-radius:999px; box-shadow:0 8px 24px rgba(0,0,0,.15);
+}
+#preview img{ max-width:100%; border:1px solid #ddd; border-radius:6px; } 
